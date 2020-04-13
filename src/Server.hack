@@ -7,6 +7,7 @@ use type HttpHack\Responses\Response;
 
 function listen_loop(resource $socket): void {
   \socket_bind($socket, 'localhost', 9000);
+  print("Listening on port 9000\n");
   // 10 is the number of connections allowed
   \socket_listen($socket, 10);
   for (; ; ) {
