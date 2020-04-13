@@ -1,46 +1,8 @@
 namespace HttpHack\Server;
 
-require_once("../vendor/autoload.hack");
-use namespace HH\Lib\Str;
-
-function get_protocol(string $input): string {
-  return "HTTP/1.1";
-}
-
-function get_status(string $input): string {
-  return "200 OK";
-}
-
-function get_content_type(string $input): string {
-  return "Content-Type: text/plain";
-}
-
-function get_content_length(string $response_body): string {
-  $length = \Strval(Str\length($response_body));
-  return "Content-Length: ".$length;
-}
-
-function get_content_body(string $input): string {
-  return "Hello world!";
-}
-
-function respond(string $input) {
-  $protocol = get_protocol($input);
-  $status = get_status($input);
-  $content_type = get_content_type($input);
-  $content_body = get_content_body($input);
-  $content_length = get_content_length($content_body);
-  $return_string = $protocol.
-    " ".
-    $status.
-    "\n".
-    $content_type.
-    "\n".
-    $content_length.
-    "\n\n".
-    $content_body;
-  return $return_string;
-}
+require_once(__DIR__."/../vendor/autoload.hack");
+use type HttpHack\Requests\Request;
+use type HttpHack\Responses\Response;
 
 
 function listen_loop(resource $socket): void {
@@ -51,8 +13,10 @@ function listen_loop(resource $socket): void {
     // accept the incoming connection, print the data and then disconnect
     $client = \socket_accept($socket);
     $input = \socket_read($client, 1024000);
-    $response = respond($input);
-    $write_res = \socket_write($client, $response);
+    $request = new Request($input);
+    $response = new Response($request);
+    $response_msg = $response->getResponse();
+    $write_res = \socket_write($client, $response_msg);
     if ($write_res === 0) {
       print("An error has occured with writing\n");
     }
