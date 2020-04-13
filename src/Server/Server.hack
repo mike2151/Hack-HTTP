@@ -1,9 +1,7 @@
 namespace HttpHack\Server;
 
-require_once(__DIR__."/../vendor/autoload.hack");
-use type HttpHack\Requests\Request;
-use type HttpHack\Responses\Response;
-
+require_once(__DIR__."/../../vendor/autoload.hack");
+use type HttpHack\Server\{Response, Request};
 
 function listen_loop(resource $socket): void {
   \socket_bind($socket, 'localhost', 9000);

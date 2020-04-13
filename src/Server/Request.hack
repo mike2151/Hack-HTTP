@@ -1,4 +1,4 @@
-namespace HttpHack\Requests;
+namespace HttpHack\Server;
 
 use namespace HH\Lib\Str;
 

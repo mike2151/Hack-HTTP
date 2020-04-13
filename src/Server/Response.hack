@@ -1,7 +1,7 @@
-namespace HttpHack\Responses;
+namespace HttpHack\Server;
 
 use namespace HH\Lib\Str;
-use type HttpHack\Requests\Request;
+use type HttpHack\Server\Request;
 
 class Response {
 
