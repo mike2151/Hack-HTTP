@@ -27,6 +27,19 @@ function tear_down_server(resource $socket): void {
   \socket_close($socket);
 }
 
+function is_dir_child_of(string $dir1, string $dir2): bool {
+  $curr_dir = $dir1;
+  $is_valid_dir = false;
+  while ($curr_dir !== "/") {
+    if ($curr_dir === $dir2) {
+      $is_valid_dir = true;
+      break;
+    }
+    $curr_dir = \dirname($curr_dir);
+  }
+  return $is_valid_dir;
+}
+
 function server(array<string> $argv): int {
   \Facebook\AutoloadMap\initialize();
   // simple socket to begin - listen and send a message
@@ -41,7 +54,18 @@ function server(array<string> $argv): int {
     $port_num = \intval($argv[1]);
   }
   if ($argc >= 3) {
-    $directory = __DIR__."/".$argv[2];
+    $directory_name = __DIR__."/".$argv[2];
+    if (!\file_exists($directory_name)) {
+      print("Error: Directory does not exist\n");
+      return 1;
+    }
+    // check the directory is inside the root and not accessing elsewhere in the system
+    $directory = \realpath($directory_name);
+    $root_dir = \realpath(__DIR__."/../../");
+    if (!is_dir_child_of($directory, $root_dir)) {
+      print("Error: Folder is not a child of server root dir\n");
+      return 1;
+    }
   }
   listen_loop($socket, $port_num, $directory);
 
