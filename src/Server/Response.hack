@@ -5,14 +5,24 @@ use type HttpHack\Server\Request;
 
 class Response {
 
+  // passed in params
   private Request $request;
   private string $directory;
-  private bool $file_not_found;
+
+  // state variables
+  private bool $is_file_request;
+  private bool $file_exists;
+  private string $file_extension;
+  private string $file;
 
   public function __construct(Request $req, string $dir) {
     $this->request = $req;
     $this->directory = $dir;
-    $this->file_not_found = false;
+
+    $this->file = $req->getRequestFile();
+    $this->is_file_request = $this->isFileRequest();
+    $this->file_exists = $this->doesFileExist();
+    $this->file_extension = $this->getFileExtension();
   }
 
   private function getProtocol(): string {
@@ -20,11 +30,29 @@ class Response {
   }
 
   private function getStatus(): string {
-    return $this->file_not_found ? "404 Not Found" : "200 OK";
+    return $this->file_exists ? "200 OK" : "404 Not Found";
+  }
+
+  private function getFileExtension(): string {
+    $extension = "";
+    if ($this->is_file_request) {
+      $extension = Str\split($this->file, ".")[1];
+    }
+    return $extension;
   }
 
   private function getContentType(): string {
-    return "Content-Type: text/plain";
+    $content_type = "text/plain";
+    if ($this->is_file_request && $this->file_exists) {
+      switch ($this->file_extension) {
+        case "html":
+          $content_type = "text/html";
+          break;
+        default:
+          break;
+      }
+    }
+    return "Content-Type: ".$content_type;
   }
 
   private function getContentLength(string $response_body): string {
@@ -33,36 +61,33 @@ class Response {
   }
 
   private function isFileRequest(): bool {
-    $request_file = $this->request->getRequestFile();
-    return $request_file !== "/";
+    return Str\contains($this->file, ".");
   }
 
-  private function doesFileExist(string $file): bool {
-    return \file_exists($this->directory.$file);
+  private function doesFileExist(): bool {
+    return \file_exists($this->directory.$this->file);
   }
 
-  private function getFileResponse(string $file): string {
-    $file_exists = $this->doesFileExist($file);
-    $return_message = "File Exists";
-    if (!$file_exists) {
-      $return_message = "File does not exist";
-      $this->file_not_found = true;
+  private function getFileResponse(): string {
+    $return_message = "File does not exist";
+    if ($this->file_exists) {
+      $return_message = \file_get_contents($this->directory.$this->file);
     }
     return $return_message;
   }
 
-  private function getContentBody(bool $is_file_request): string {
+  private function getContentBody(): string {
     $default_message = "Main Page of Web Server";
-    $file = $this->request->getRequestFile();
-    return $is_file_request ? $this->getFileResponse($file) : $default_message;
+    return $this->is_file_request
+      ? $this->getFileResponse($this->file)
+      : $default_message;
   }
 
   public function getResponse(): string {
-    $is_file_request = $this->isFileRequest();
     $protocol = $this->getProtocol();
-    $content_type = $this->getContentType();
-    $content_body = $this->getContentBody($is_file_request);
+    $content_body = $this->getContentBody();
     $status = $this->getStatus();
+    $content_type = $this->getContentType();
     $content_length = $this->getContentLength($content_body);
     return $protocol.
       " ".
