@@ -35,7 +35,7 @@ function server(array<string> $argv): int {
   $socket = \socket_create(\AF_INET, \SOCK_STREAM, \SOL_TCP);
 
   $port_num = 9000;
-  $directory = __DIR__."/../../";
+  $directory = __DIR__."/../../www";
   $argc = \count($argv);
   if ($argc >= 2) {
     $port_num = \intval($argv[1]);

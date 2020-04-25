@@ -7,10 +7,12 @@ class Response {
 
   private Request $request;
   private string $directory;
+  private bool $file_not_found;
 
   public function __construct(Request $req, string $dir) {
     $this->request = $req;
     $this->directory = $dir;
+    $this->file_not_found = false;
   }
 
   private function getProtocol(): string {
@@ -18,7 +20,7 @@ class Response {
   }
 
   private function getStatus(): string {
-    return "200 OK";
+    return $this->file_not_found ? "404 Not Found" : "200 OK";
   }
 
   private function getContentType(): string {
@@ -35,21 +37,32 @@ class Response {
     return $request_file !== "/";
   }
 
-  private function getFileBody(): string {
-    return "this is a file";
+  private function doesFileExist(string $file): bool {
+    return \file_exists($this->directory.$file);
   }
 
-  private function getContentBody(boolean is_file_request): string {
+  private function getFileResponse(string $file): string {
+    $file_exists = $this->doesFileExist($file);
+    $return_message = "File Exists";
+    if (!$file_exists) {
+      $return_message = "File does not exist";
+      $this->file_not_found = true;
+    }
+    return $return_message;
+  }
+
+  private function getContentBody(bool $is_file_request): string {
     $default_message = "Main Page of Web Server";
-    return is_file_request ? $this->getFileBody() : $default_message;
+    $file = $this->request->getRequestFile();
+    return $is_file_request ? $this->getFileResponse($file) : $default_message;
   }
 
   public function getResponse(): string {
     $is_file_request = $this->isFileRequest();
     $protocol = $this->getProtocol();
-    $status = $this->getStatus();
     $content_type = $this->getContentType();
     $content_body = $this->getContentBody($is_file_request);
+    $status = $this->getStatus();
     $content_length = $this->getContentLength($content_body);
     return $protocol.
       " ".
